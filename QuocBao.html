@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Xí Ngầu Pro Max – Cao Thủ Chuyên Nghiệp</title>
+<style>
+  body { background:#000; color:#0f0; font-family: monospace; text-align:center; padding:20px; }
+  input { width:80px; text-align:center; font-size:18px; margin:5px; }
+  button { background:#0f0; color:#000; border:none; padding:8px 15px; cursor:pointer; font-weight:bold; border-radius:4px; }
+  button:hover { background:#9f9; }
+  #result { font-size:24px; margin-top:15px; }
+  #confidence { font-size:18px; margin-top:8px; font-weight:bold; }
+  #reason { font-size:14px; color:#0ff; margin-top:10px; }
+  #tip { font-size:14px; color:#ffd; margin-top:10px; }
+  #history { margin-top:15px; font-size:13px; color:#999; }
+
+  /* ==== Giao diện nhập key ==== */
+  #loginScreen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at center, #001a00 0%, #000 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #0f0; font-family: 'Courier New', monospace; z-index: 9999;
+  }
+
+  #loginBox {
+    border: 2px solid #0f0;
+    box-shadow: 0 0 20px #0f0;
+    padding: 25px 30px;
+    border-radius: 12px;
+    width: 320px;
+    background: rgba(0, 20, 0, 0.7);
+    text-align: center;
+    animation: glowIn 0.6s ease;
+    position: relative;
+  }
+
+  @keyframes glowIn {
+    from { opacity: 0; transform: scale(0.9); box-shadow: none; }
+    to { opacity: 1; transform: scale(1); box-shadow: 0 0 20px #0f0; }
+  }
+
+  #keyInput {
+    width: 90%; font-size: 16px; text-align: center;
+    margin: 8px 0 16px; background: #000; color: #0f0;
+    border: 1px solid #0f0; border-radius: 6px; padding: 6px;
+    box-shadow: inset 0 0 10px #0f0;
+  }
+
+  .btn-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    width: 90%;
+    margin: 0 auto 10px;
+  }
+
+  .login-btn {
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+    color: #0f0;
+    background: transparent;
+    border: 1px solid #0f0;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #0f0;
+    transition: 0.2s all ease;
+  }
+  .login-btn:hover {
+    background: #0f0;
+    color: #000;
+    box-shadow: 0 0 20px #0f0, 0 0 30px #0f0;
+    transform: translateY(-2px);
+  }
+
+  .btn-login-big {
+    display: block;
+    width: 90%;
+    margin: 8px auto 0;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    border: 1px solid #0f0;
+    border-radius: 10px;
+    box-shadow: 0 0 15px #0f0;
+    background: transparent;
+    color: #0f0;
+    transition: 0.25s all ease;
+  }
+  .btn-login-big:hover {
+    background: #0f0;
+    color: #000;
+    box-shadow: 0 0 25px #0f0, 0 0 35px #0f0;
+  }
+
+  #loginMsg { color:#f33; margin-top:12px; font-weight:bold; }
+
+  .corner-btn {
+    position: fixed;
+    bottom: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    border: 1px solid #0f0;
+    color: #0f0;
+    background: transparent;
+    border-radius: 6px;
+    box-shadow: 0 0 10px #0f0;
+    transition: 0.2s ease;
+  }
+  .corner-btn:hover {
+    background: #0f0;
+    color: #000;
+    box-shadow: 0 0 20px #0f0;
+  }
+  #buyKeyBtn { left: 20px; }
+  #telegramBtn { right: 20px; }
+
+  #mainContent { display:none; }
+</style>
+</head>
+<body>
+
+<!-- ==== MÀN HÌNH NHẬP KEY ==== -->
+<div id="loginScreen">
+  <div id="loginBox">
+    <h2>🔐 Xác Thực Người Dùng Thật</h2>
+    <input id="keyInput" type="text" placeholder="Nhập key tại đây">
+
+    <div class="btn-row">
+      <button class="login-btn" onclick="copyKeyLink()">🔑 Lấy key</button>
+      <button class="login-btn" onclick="showGuide()">📜 Lưu Ý</button>
+    </div>
+
+    <button class="btn-login-big" onclick="checkKey()">🔓 Đăng nhập</button>
+    <p id="loginMsg"></p>
+  </div>
+
+  <button id="buyKeyBtn" class="corner-btn" onclick="goBuyKey()">🛒 Mua key</button>
+  <button id="telegramBtn" class="corner-btn" onclick="goTelegram()">👥 Nhóm Telegram</button>
+</div>
+
+<!-- ==== TRANG CHÍNH ==== -->
+<div id="mainContent">
+  <button style="position:fixed;top:10px;right:10px;background:transparent;border:1px solid #0f0;color:#0f0;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;" onclick="logout()">🚪 Đăng xuất</button>
+
+  <h2>🎲 AI Xí Ngầu Pro Max – Cao Thủ Chuyên Nghiệp</h2>
+  <p>Nhập 3 con xí ngầu (1–6):</p>
+  <input id="d1" type="number" min="1" max="6">
+  <input id="d2" type="number" min="1" max="6">
+  <input id="d3" type="number" min="1" max="6">
+  <br>
+  <button onclick="predict()">Dự Đoán Tiếp Theo</button>
+  <button onclick="clearHistory()">🧹 Xóa Lịch Sử</button>
+
+  <div id="result"></div>
+  <div id="confidence"></div>
+  <div id="reason"></div>
+  <div id="tip"></div>
+  <div id="history"></div>
+</div>
+
+<script>
+// ==== KEY CONFIG ====
+const VALID_KEY = "2025";
+const KEY_LINK = "https://link4m.com/MjHlW";
+const BUY_KEY_LINK = "https://t.me/qbaodzvll";
+const TELEGRAM_LINK = "https://t.me/yourgroup";
+
+// ==== XỬ LÝ ĐĂNG NHẬP ====
+window.onload = () => {
+  const savedKey = localStorage.getItem("accessKey");
+  if (savedKey === VALID_KEY) {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("mainContent").style.display = "block";
+  } else {
+    document.getElementById("loginScreen").style.display = "flex";
+  }
+};
+
+function checkKey() {
+  const key = document.getElementById("keyInput").value.trim();
+  const msg = document.getElementById("loginMsg");
+  if (key === VALID_KEY) {
+    localStorage.setItem("accessKey", key);
+    msg.style.color = "#0f0";
+    msg.innerText = "✅ Xác thực thành công!";
+    setTimeout(() => {
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("mainContent").style.display = "block";
+    }, 700);
+  } else {
+    msg.style.color = "#f33";
+    msg.innerText = "❌ Key không hợp lệ!";
+  }
+}
+
+function logout() {
+  localStorage.removeItem("accessKey");
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("mainContent").style.display = "none";
+}
+
+function copyKeyLink() {
+  navigator.clipboard.writeText(KEY_LINK);
+  alert("✅ Đã sao chép link lấy key!");
+}
+function showGuide() {
+  alert("📜 Cách lấy key:\n1. Bấm 'Lấy key'.\n2. Dán link Vào Google Hoặc Safari.\n3. Làm theo hướng dẫn và dán key vào ô.\n4. Mỗi Key Chỉ Sài Trong 10h - 24h");
+}
+function goBuyKey() { window.open(BUY_KEY_LINK, "_blank"); }
+function goTelegram() { window.open(TELEGRAM_LINK, "_blank"); }
+
+// ==== CODE CHÍNH: AI XÍ NGẦU ====
+let history = JSON.parse(localStorage.getItem('diceHistory') || '[]');
+let learned = JSON.parse(localStorage.getItem('learnedRules') || '{"lastInput":"","lastOutput":"","expertStats":{"win":0,"lose":0},"lastGood":"","confidence":60}');
+
+function predict() {
+  let d1 = +document.getElementById('d1').value;
+  let d2 = +document.getElementById('d2').value;
+  let d3 = +document.getElementById('d3').value;
+  if (![d1,d2,d3].every(v=>v>=1&&v<=6)) return alert("Nhập số hợp lệ (1–6)");
+
+  const inputKey = `${d1}-${d2}-${d3}`;
+  if (learned.lastInput === inputKey) {
+    showResult(learned);
+    return;
+  }
+
+  const sum = d1 + d2 + d3;
+  const type = sum >= 11 ? "Tài" : "Xỉu";
+  history.push({sum, type});
+  if (history.length > 100) history.shift();
+
+  let counts = {Tài:0, Xỉu:0};
+  for (let h of history.slice(-12)) counts[h.type]++;
+
+  let recent = history.slice(-6).map(h=>h.type);
+  let pattern = recent.join("-");
+  let reason = "", prediction = "", confidence = 60;
+
+  // === PHÂN TÍCH CẦU CAO THỦ ===
+  if (recent.every(v=>v===recent[0]) && recent.length >= 3) {
+    reason = "Cầu bệt mạnh – cao thủ theo tiếp cho đến khi gãy.";
+    prediction = recent[0];
+    confidence = 92;
+  } else if (/Tài-Xỉu-Tài|Xỉu-Tài-Xỉu/.test(pattern)) {
+    reason = "Cầu xen kẽ ổn định – theo tiếp hướng cuối.";
+    prediction = recent[recent.length-1];
+    confidence = 85;
+  } else if (/Tài-Tài-Xỉu|Xỉu-Xỉu-Tài/.test(pattern)) {
+    reason = "Cầu 1-2 – cao thủ giữ nhịp đôi.";
+    prediction = recent[recent.length-1];
+    confidence = 78;
+  } else if (counts.Tài > counts.Xỉu + 4) {
+    reason = "Tài áp đảo nhiều – cao thủ chờ đảo, vào nhẹ Xỉu.";
+    prediction = "Xỉu";
+    confidence = 72;
+  } else if (counts.Xỉu > counts.Tài + 4) {
+    reason = "Xỉu áp đảo nhiều – khả năng đảo Tài cao.";
+    prediction = "Tài";
+    confidence = 72;
+  } else if (/Tài-Tài-Tài|Xỉu-Xỉu-Xỉu/.test(pattern)) {
+    reason = "Cầu 3-3 – theo tiếp cho đến khi đảo nhịp.";
+    prediction = recent[recent.length-1];
+    confidence = 80;
+  } else {
+    reason = "Không rõ cầu – dùng học thực chiến theo kết quả gần nhất.";
+    prediction = learned.lastGood || (Math.random()>0.5?"Tài":"Xỉu");
+    confidence = 65;
+  }
+
+  if (learned.lastPredict && learned.lastResult) {
+    if (learned.lastPredict === learned.lastResult) {
+      learned.expertStats.win++;
+      learned.lastGood = learned.lastPredict;
+      confidence = Math.min(95, confidence + 5);
+    } else {
+      learned.expertStats.lose++;
+      confidence = Math.max(50, confidence - 5);
+    }
+  }
+
+  learned.lastPredict = prediction;
+  learned.lastResult = type;
+  learned.lastInput = inputKey;
+  learned.lastOutput = `🔮 Dự đoán: <b>${prediction}</b>`;
+  learned.lastReason = `📘 Lý do: ${reason}`;
+  learned.lastTip = getRandomTip(confidence);
+  learned.confidence = confidence;
+
+  localStorage.setItem('learnedRules', JSON.stringify(learned));
+  localStorage.setItem('diceHistory', JSON.stringify(history));
+
+  showResult(learned);
+}
+
+function showResult(data) {
+  let color = "#ff0";
+  if (data.confidence >= 85) color = "#0f0";
+  else if (data.confidence < 65) color = "#f33";
+
+  document.getElementById('result').innerHTML = data.lastOutput;
+  document.getElementById('confidence').innerHTML = `🔥 Độ tự tin: <b style="color:${color}">${data.confidence}%</b>`;
+  document.getElementById('reason').innerText = data.lastReason;
+  document.getElementById('tip').innerText = data.lastTip;
+  document.getElementById('history').innerText = "Lịch sử: " + history.slice(-10).map(h=>h.type).join(" ");
+}
+
+function getRandomTip(conf) {
+  const tipsHigh = [
+    "💡 Cầu mạnh → chỉ theo nhịp đúng, không cần gấp thếp.",
+    "💡 Đang ăn đều → tiếp tục giữ mức cược, đừng tăng vội.",
+    "💡 Cao thủ: thắng 3 dừng 1, để bảo toàn nhịp lợi nhuận."
+  ];
+  const tipsMid = [
+    "💡 Nhịp đang ổn, nhưng đừng đánh lớn.",
+    "💡 Theo nhẹ 1–2 ván rồi quan sát tiếp.",
+    "💡 Khi % trung bình, chỉ dùng vốn nhỏ."
+  ];
+  const tipsLow = [
+    "💡 Không rõ cầu – nên bỏ lượt hoặc quan sát thêm.",
+    "💡 Khi cầu rối → chờ tín hiệu bệt rõ mới vào.",
+    "💡 Cao thủ luôn nghỉ khi cảm thấy không chắc."
+  ];
+
+  if (conf >= 85) return tipsHigh[Math.floor(Math.random()*tipsHigh.length)];
+  else if (conf >= 70) return tipsMid[Math.floor(Math.random()*tipsMid.length)];
+  else return tipsLow[Math.floor(Math.random()*tipsLow.length)];
+}
+
+function clearHistory() {
+  history = [];
+  learned = {"lastInput":"","lastOutput":"","expertStats":{"win":0,"lose":0},"lastGood":"","confidence":60};
+  localStorage.removeItem('diceHistory');
+  localStorage.removeItem('learnedRules');
+  document.getElementById('result').innerText = "";
+  document.getElementById('confidence').innerText = "";
+  document.getElementById('reason').innerText = "";
+  document.getElementById('tip').innerText = "";
+  document.getElementById('history').innerText = "Đã xóa lịch sử.";
+}
+</script>
+</body>
+</html>
