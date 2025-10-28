@@ -165,15 +165,20 @@ const VALID_KEY = "2025";
 const KEY_LINK = "https://link4m.com/MjHlW";
 const BUY_KEY_LINK = "https://t.me/qbaodzvll";
 const TELEGRAM_LINK = "https://t.me/qbaommo";
+const KEY_EXPIRE_MS = 60 * 60 * 1000; // 1 tiếng
 
 // ==== XỬ LÝ ĐĂNG NHẬP ====
 window.onload = () => {
   const savedKey = localStorage.getItem("accessKey");
-  if (savedKey === VALID_KEY) {
-    document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("mainContent").style.display = "block";
+  const accessTime = localStorage.getItem("accessTime");
+  const now = Date.now();
+
+  // Kiểm tra hết hạn
+  if (savedKey === VALID_KEY && accessTime && now - accessTime < KEY_EXPIRE_MS) {
+    showMain();
+    setAutoLogout();
   } else {
-    document.getElementById("loginScreen").style.display = "flex";
+    logout();
   }
 };
 
@@ -182,11 +187,12 @@ function checkKey() {
   const msg = document.getElementById("loginMsg");
   if (key === VALID_KEY) {
     localStorage.setItem("accessKey", key);
+    localStorage.setItem("accessTime", Date.now());
     msg.style.color = "#0f0";
     msg.innerText = "✅ Xác thực thành công!";
     setTimeout(() => {
-      document.getElementById("loginScreen").style.display = "none";
-      document.getElementById("mainContent").style.display = "block";
+      showMain();
+      setAutoLogout();
     }, 700);
   } else {
     msg.style.color = "#f33";
@@ -194,10 +200,23 @@ function checkKey() {
   }
 }
 
+function showMain() {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("mainContent").style.display = "block";
+}
+
 function logout() {
   localStorage.removeItem("accessKey");
+  localStorage.removeItem("accessTime");
   document.getElementById("loginScreen").style.display = "flex";
   document.getElementById("mainContent").style.display = "none";
+}
+
+function setAutoLogout() {
+  setTimeout(() => {
+    alert("⏰ Phiên làm việc đã hết hạn, vui lòng nhập lại key!");
+    logout();
+  }, KEY_EXPIRE_MS);
 }
 
 function copyKeyLink() {
@@ -205,7 +224,7 @@ function copyKeyLink() {
   alert("✅ Đã sao chép link lấy key!");
 }
 function showGuide() {
-  alert("📜 Cách lấy key:\n1. Bấm 'Lấy key'.\n2. Dán link Vào Google Hoặc Safari.\n3. Làm theo hướng dẫn và dán key vào ô.\n4. Mỗi Key Chỉ Sài Trong 10h - 24h");
+  alert("📜 Cách lấy key:\n1. Bấm 'Lấy key'.\n2. Dán link vào Google hoặc Safari.\n3. Làm theo hướng dẫn và dán key vào ô.\n4. Mỗi key chỉ có hiệu lực 10h–24h.");
 }
 function goBuyKey() { window.open(BUY_KEY_LINK, "_blank"); }
 function goTelegram() { window.open(TELEGRAM_LINK, "_blank"); }
@@ -214,6 +233,7 @@ function goTelegram() { window.open(TELEGRAM_LINK, "_blank"); }
 let history = JSON.parse(localStorage.getItem('diceHistory') || '[]');
 let learned = JSON.parse(localStorage.getItem('learnedRules') || '{"lastInput":"","lastOutput":"","expertStats":{"win":0,"lose":0},"lastGood":"","confidence":60}');
 
+// (Phần logic dự đoán giữ nguyên 100%)
 function predict() {
   let d1 = +document.getElementById('d1').value;
   let d2 = +document.getElementById('d2').value;
@@ -221,10 +241,7 @@ function predict() {
   if (![d1,d2,d3].every(v=>v>=1&&v<=6)) return alert("Nhập số hợp lệ (1–6)");
 
   const inputKey = `${d1}-${d2}-${d3}`;
-  if (learned.lastInput === inputKey) {
-    showResult(learned);
-    return;
-  }
+  if (learned.lastInput === inputKey) { showResult(learned); return; }
 
   const sum = d1 + d2 + d3;
   const type = sum >= 11 ? "Tài" : "Xỉu";
@@ -238,45 +255,29 @@ function predict() {
   let pattern = recent.join("-");
   let reason = "", prediction = "", confidence = 60;
 
-  // === PHÂN TÍCH CẦU CAO THỦ ===
   if (recent.every(v=>v===recent[0]) && recent.length >= 3) {
     reason = "Cầu bệt mạnh – cao thủ theo tiếp cho đến khi gãy.";
-    prediction = recent[0];
-    confidence = 92;
+    prediction = recent[0]; confidence = 92;
   } else if (/Tài-Xỉu-Tài|Xỉu-Tài-Xỉu/.test(pattern)) {
-    reason = "Cầu xen kẽ ổn định – theo tiếp hướng cuối.";
-    prediction = recent[recent.length-1];
-    confidence = 85;
+    reason = "Cầu xen kẽ ổn định – theo tiếp hướng cuối."; prediction = recent.at(-1); confidence = 85;
   } else if (/Tài-Tài-Xỉu|Xỉu-Xỉu-Tài/.test(pattern)) {
-    reason = "Cầu 1-2 – cao thủ giữ nhịp đôi.";
-    prediction = recent[recent.length-1];
-    confidence = 78;
+    reason = "Cầu 1-2 – cao thủ giữ nhịp đôi."; prediction = recent.at(-1); confidence = 78;
   } else if (counts.Tài > counts.Xỉu + 4) {
-    reason = "Tài áp đảo nhiều – cao thủ chờ đảo, vào nhẹ Xỉu.";
-    prediction = "Xỉu";
-    confidence = 72;
+    reason = "Tài áp đảo nhiều – cao thủ chờ đảo, vào nhẹ Xỉu."; prediction = "Xỉu"; confidence = 72;
   } else if (counts.Xỉu > counts.Tài + 4) {
-    reason = "Xỉu áp đảo nhiều – khả năng đảo Tài cao.";
-    prediction = "Tài";
-    confidence = 72;
+    reason = "Xỉu áp đảo nhiều – khả năng đảo Tài cao."; prediction = "Tài"; confidence = 72;
   } else if (/Tài-Tài-Tài|Xỉu-Xỉu-Xỉu/.test(pattern)) {
-    reason = "Cầu 3-3 – theo tiếp cho đến khi đảo nhịp.";
-    prediction = recent[recent.length-1];
-    confidence = 80;
+    reason = "Cầu 3-3 – theo tiếp cho đến khi đảo nhịp."; prediction = recent.at(-1); confidence = 80;
   } else {
     reason = "Không rõ cầu – dùng học thực chiến theo kết quả gần nhất.";
-    prediction = learned.lastGood || (Math.random()>0.5?"Tài":"Xỉu");
-    confidence = 65;
+    prediction = learned.lastGood || (Math.random()>0.5?"Tài":"Xỉu"); confidence = 65;
   }
 
   if (learned.lastPredict && learned.lastResult) {
     if (learned.lastPredict === learned.lastResult) {
-      learned.expertStats.win++;
-      learned.lastGood = learned.lastPredict;
-      confidence = Math.min(95, confidence + 5);
+      learned.expertStats.win++; learned.lastGood = learned.lastPredict; confidence = Math.min(95, confidence + 5);
     } else {
-      learned.expertStats.lose++;
-      confidence = Math.max(50, confidence - 5);
+      learned.expertStats.lose++; confidence = Math.max(50, confidence - 5);
     }
   }
 
@@ -295,10 +296,7 @@ function predict() {
 }
 
 function showResult(data) {
-  let color = "#ff0";
-  if (data.confidence >= 85) color = "#0f0";
-  else if (data.confidence < 65) color = "#f33";
-
+  let color = data.confidence >= 85 ? "#0f0" : data.confidence < 65 ? "#f33" : "#ff0";
   document.getElementById('result').innerHTML = data.lastOutput;
   document.getElementById('confidence').innerHTML = `🔥 Độ tự tin: <b style="color:${color}">${data.confidence}%</b>`;
   document.getElementById('reason').innerText = data.lastReason;
@@ -307,22 +305,9 @@ function showResult(data) {
 }
 
 function getRandomTip(conf) {
-  const tipsHigh = [
-    "💡 Cầu mạnh → chỉ theo nhịp đúng, không cần gấp thếp.",
-    "💡 Đang ăn đều → tiếp tục giữ mức cược, đừng tăng vội.",
-    "💡 Cao thủ: thắng 3 dừng 1, để bảo toàn nhịp lợi nhuận."
-  ];
-  const tipsMid = [
-    "💡 Nhịp đang ổn, nhưng đừng đánh lớn.",
-    "💡 Theo nhẹ 1–2 ván rồi quan sát tiếp.",
-    "💡 Khi % trung bình, chỉ dùng vốn nhỏ."
-  ];
-  const tipsLow = [
-    "💡 Không rõ cầu – nên bỏ lượt hoặc quan sát thêm.",
-    "💡 Khi cầu rối → chờ tín hiệu bệt rõ mới vào.",
-    "💡 Cao thủ luôn nghỉ khi cảm thấy không chắc."
-  ];
-
+  const tipsHigh = ["💡 Cầu mạnh → chỉ theo nhịp đúng, không cần gấp thếp.","💡 Đang ăn đều → tiếp tục giữ mức cược, đừng tăng vội.","💡 Cao thủ: thắng 3 dừng 1, để bảo toàn nhịp lợi nhuận."];
+  const tipsMid = ["💡 Nhịp đang ổn, nhưng đừng đánh lớn.","💡 Theo nhẹ 1–2 ván rồi quan sát tiếp.","💡 Khi % trung bình, chỉ dùng vốn nhỏ."];
+  const tipsLow = ["💡 Không rõ cầu – nên bỏ lượt hoặc quan sát thêm.","💡 Khi cầu rối → chờ tín hiệu bệt rõ mới vào.","💡 Cao thủ luôn nghỉ khi cảm thấy không chắc."];
   if (conf >= 85) return tipsHigh[Math.floor(Math.random()*tipsHigh.length)];
   else if (conf >= 70) return tipsMid[Math.floor(Math.random()*tipsMid.length)];
   else return tipsLow[Math.floor(Math.random()*tipsLow.length)];
